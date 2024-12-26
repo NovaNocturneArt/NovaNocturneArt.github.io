@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing Game</title>
+    <style>
+    body {
+        text-align: center;
+        background-color: hsla(0, 0%, 0%, 100);
+        color: #fff;
+        mix-blend-mode: difference;
+        transform-origin: top;
+    }
+    #Scaler{
+        transform-origin: top;
+        transform: scale(0.75);
+    }
+    button, input {
+        box-sizing: border-box;
+        width: 50%;
+        font-size: 12px;
+        padding: 10px 10px;
+        text-align: center;
+    }
+    table, tr, th {
+        padding: 10px;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Add styles for the popup notification */
+    .popup-notification {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        pointer-events: none;
+    }
+    </style>
+</head>
+<body>
+    <div id="Scaler">
+        <h2>Number Guessing Game</h2>
+        <p style="font-size: 8px;">By Nova Nocturne</p>
+        <table>
+            <tr>
+                <th><label for="minInput">Min</label> - <label for="maxInput">Max</label></th>
+                <th style="width: 30%;"><label>Current Guess</label></th>
+            </tr>
+            <tr>
+                <td><input type="number" id="minInput" value="1"><input type="number" id="maxInput" value="999"></td>
+                <td><span id="currentGuess">???</span></td>
+            </tr>
+
+            <tr>
+                <th><label>Starting Range</label></th>
+                <th style="width: 30%;"><label>Current Range</label></th>
+            </tr>
+            <tr>
+                <td><button id="setRangeButton">Set</button><button id="resetButton">Reset</button></td>
+                <td><span id="currentRange">1 - 999</span></td>
+            </tr>
+
+            <tr>
+                <th><label>Guess</label></th>
+                <th style="width: 30%;"><label>Guess History</label></th>
+            </tr>
+            <tr>
+                <td style="vertical-align: top;"><button id="upButton" disabled>Higher</button><button id="downButton" disabled>Lower</button></td>
+                <td>
+                    <div id="historyContainer" style="max-height: 200px; overflow-y: auto;">
+                        <div id="history">???</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Add a popup notification element -->
+    <div class="popup-notification" id="notification"></div>
+
+    <script>
+        let min = 1;
+        let max = 999;
+        let currentGuess = 500;
+        let history = ["500"];
+
+        // Function to update the scale based on viewport width and height
+        function updateScale() {
+            const scaleWidth = window.innerWidth / document.getElementById("Scaler").offsetWidth;
+            const scaleHeight = window.innerHeight / document.getElementById("Scaler").offsetHeight;
+            const scale = Math.min(scaleWidth, scaleHeight);
+            document.body.style.transform = `scale(${scale})`;
+        }
+
+        // Call updateScale initially and whenever the window is resized
+        updateScale();
+        window.addEventListener("resize", updateScale);
+
+        document.getElementById("setRangeButton").addEventListener("click", () => {
+            min = parseInt(document.getElementById("minInput").value);
+            max = parseInt(document.getElementById("maxInput").value);
+            currentGuess = Math.floor((min + max) / 2);
+            history = [`${currentGuess}`];
+            updateUI();
+            copyToClipboard(currentGuess.toString());
+        });
+
+        document.getElementById("upButton").addEventListener("click", () => {
+            min = currentGuess + 1;
+            currentGuess = Math.floor((min + max) / 2);
+            history.push(`${currentGuess}`);
+            updateUI();
+            copyToClipboard(currentGuess.toString());
+        });
+
+        document.getElementById("downButton").addEventListener("click", () => {
+            max = currentGuess - 1;
+            currentGuess = Math.floor((min + max) / 2);
+            history.push(`${currentGuess}`);
+            updateUI();
+            copyToClipboard(currentGuess.toString());
+        });
+
+        document.getElementById("resetButton").addEventListener("click", () => {
+            min = 1;
+            max = 999;
+            currentGuess = 500;
+            history = ["500"];
+            updateUI();
+            copyToClipboard(currentGuess.toString());
+        });
+
+        // Function to add click event listeners to history and current guess elements
+        function addClickListenersToHistory() {
+            const historyDiv = document.getElementById("history");
+            historyDiv.addEventListener("click", (event) => {
+                if (event.target.tagName === "DIV") {
+                    const valueToCopy = event.target.textContent;
+                    copyToClipboard(valueToCopy);
+                }
+            });
+
+            const currentGuessSpan = document.getElementById("currentGuess");
+            currentGuessSpan.addEventListener("click", () => {
+                copyToClipboard(currentGuess.toString());
+            });
+        }
+
+        // Function to show a popup notification
+        function showPopupNotification(text) {
+            const notificationElement = document.getElementById("notification");
+            notificationElement.textContent = text;
+
+            // Calculate the position of the mouse click
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            // Set the position of the notification element next to the mouse cursor
+            notificationElement.style.left = `${mouseX - 100}px`;
+            notificationElement.style.top = `${mouseY}px`;
+
+            // Show the notification
+            notificationElement.style.opacity = 1;
+
+            // Automatically hide the notification after a few seconds
+            setTimeout(() => {
+                notificationElement.style.opacity = 0;
+            }, 2000); // Adjust the time (in milliseconds) as needed
+        }
+
+        // Function to copy text to clipboard using Clipboard API
+        function copyToClipboard(text) {
+            const dummyElement = document.createElement("textarea");
+            dummyElement.value = text;
+            document.body.appendChild(dummyElement);
+            dummyElement.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummyElement);
+            
+            // Show a popup notification when text is copied
+            showPopupNotification(`Copied to clipboard: ${text}`);
+        }
+
+        // Call the function to add click event listeners to history and current guess elements
+        addClickListenersToHistory();
+
+        function updateUI() {
+            document.getElementById("currentGuess").textContent = currentGuess;
+            document.getElementById("currentRange").textContent = `${min} - ${max}`;
+            
+            const historyDiv = document.getElementById("history");
+            historyDiv.innerHTML = history.map(guess => `<div>${guess}</div>`).join("");
+            
+            const historyContainer = document.getElementById("historyContainer");
+            
+            // Check if the number of history entries exceeds a certain limit (e.g., 10)
+            if (history.length > 10) {
+                historyContainer.style.overflowY = "scroll";
+            } else {
+                historyContainer.style.overflowY = "hidden";
+            }
+            
+            // Disable "Up" and "Down" buttons if there's only one possible guess left.
+            if (min >= max) {
+                document.getElementById("upButton").disabled = true;
+                document.getElementById("downButton").disabled = true;
+            } else {
+                document.getElementById("upButton").disabled = false;
+                document.getElementById("downButton").disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
